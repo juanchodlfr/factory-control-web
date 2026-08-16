@@ -1,0 +1,44 @@
+name: validate
+
+on:
+  push:
+    branches:
+      - feat/factory-control-web-v0.1.0
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+      - name: Commit authentic npm lockfile
+        if: ${{ hashFiles('package-lock.json') != '' && github.event_name == 'push' }}
+        run: |
+          if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            echo "package-lock.json already tracked"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: add authentic npm lockfile"
+            git push
+          fi
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
