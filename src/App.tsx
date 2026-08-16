@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getAgents,getBoard,getHistory,getPipeline,getSummary,supabase } from './api'
+import { getAgents,getBoard,getHistory,getPipeline,getSummary,initialAuthCallback,supabase } from './api'
+import { clearAuthCallbackUrl } from './auth-callback'
 import type { BoardData } from './contracts'
 
 type Page='overview'|'board'|'pipelines'|'agents'|'blockers'|'history'
@@ -11,7 +12,25 @@ const fmt=(v:string|null|undefined)=>v?new Intl.DateTimeFormat('es-ES',{dateStyl
 function Login(){
  const [email,setEmail]=useState(''); const [password,setPassword]=useState(''); const [error,setError]=useState(''); const [busy,setBusy]=useState(false)
  async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError('');const {error}=await supabase.auth.signInWithPassword({email,password});if(error)setError(error.message);setBusy(false)}
- return <main className="login"><section className="login-card"><span className="eyebrow">AGENT FACTORY</span><h1>Factory Control</h1><p>Acceso administrativo. La aplicación es de solo lectura.</p><form onSubmit={submit}><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="username"/></label><label>Contraseña<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required autoComplete="current-password"/></label>{error&&<div className="error-banner">{error}</div>}<button disabled={busy}>{busy?'Accediendo…':'Acceder'}</button></form></section></main>
+ return <main className="login"><section className="login-card"><span className="eyebrow">AGENT FACTORY</span><h1>Factory Control</h1><p>Acceso administrativo. La aplicación es de solo lectura.</p><form onSubmit={submit}><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="username"/></label><label>Contraseña<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required autoComplete="current-password"/></label>{error&&<div className="error-banner" role="alert">{error}</div>}<button disabled={busy}>{busy?'Accediendo…':'Acceder'}</button></form></section></main>
+}
+
+function PasswordSetup({onComplete}:{onComplete:()=>void}){
+ const [password,setPassword]=useState(''); const [confirm,setConfirm]=useState(''); const [error,setError]=useState(''); const [busy,setBusy]=useState(false)
+ async function submit(e:FormEvent){
+  e.preventDefault(); setError('')
+  if(password!==confirm){setError('Las contraseñas no coinciden.');return}
+  setBusy(true)
+  const {error}=await supabase.auth.updateUser({password})
+  if(error){setError(error.message);setBusy(false);return}
+  clearAuthCallbackUrl(); onComplete()
+ }
+ return <main className="login"><section className="login-card"><span className="eyebrow">INVITACIÓN VERIFICADA</span><h1>Completa tu acceso</h1><p>Tu sesión de invitación ya está autenticada. Define una contraseña para poder volver a entrar en Factory Control.</p><form onSubmit={submit}><label>Nueva contraseña<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required autoComplete="new-password"/></label><label>Repite la contraseña<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} required autoComplete="new-password"/></label>{error&&<div className="error-banner" role="alert">{error}</div>}<button disabled={busy}>{busy?'Guardando…':'Guardar contraseña y entrar'}</button></form></section></main>
+}
+
+function AuthCallbackError({message,onReset}:{message:string;onReset:()=>void}){
+ async function reset(){await supabase.auth.signOut();clearAuthCallbackUrl();onReset()}
+ return <main className="login"><section className="login-card"><span className="eyebrow">ENLACE DE ACCESO</span><h1>No se pudo completar la invitación</h1><p>El enlace no puede utilizarse en este momento. Los enlaces de invitación son de un solo uso y también pueden caducar.</p><div className="error-banner" role="alert">{message}</div><button className="standalone-action" onClick={reset}>Volver al acceso</button></section></main>
 }
 
 function Kpi({label,value,hot,onClick}:{label:string,value:number,hot?:boolean,onClick?:()=>void}){return <button className={`kpi ${hot?'hot':''}`} onClick={onClick}><strong>{value}</strong><span>{label}</span></button>}
@@ -26,15 +45,15 @@ function Pipeline({id}:{id:string}){const q=useQuery({queryKey:['pipeline',id],q
 function ErrorBox({error}:{error:unknown}){return <div className="error-banner">{error instanceof Error?error.message:'Could not load Factory Lite.'}</div>}
 
 export default function App(){
- const [sessionReady,setSessionReady]=useState(false); const [authenticated,setAuthenticated]=useState(false); const [page,setPage]=useState<Page>('overview'); const [selected,setSelected]=useState(''); const qc=useQueryClient()
- useEffect(()=>{supabase.auth.getSession().then(({data})=>{setAuthenticated(!!data.session);setSessionReady(true)});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setAuthenticated(!!s));return()=>subscription.unsubscribe()},[])
+ const [sessionReady,setSessionReady]=useState(false); const [authenticated,setAuthenticated]=useState(false); const [passwordSetup,setPasswordSetup]=useState(initialAuthCallback.kind==='password_setup'); const [callbackError,setCallbackError]=useState(initialAuthCallback.kind==='error'?initialAuthCallback.message:''); const [page,setPage]=useState<Page>('overview'); const [selected,setSelected]=useState(''); const qc=useQueryClient()
+ useEffect(()=>{let active=true;supabase.auth.getSession().then(({data,error})=>{if(!active)return;if(error&&!callbackError)setCallbackError(error.message);setAuthenticated(!!data.session);if(passwordSetup&&!data.session&&!callbackError)setCallbackError('La sesión de invitación no está disponible o ha caducado. Solicita un nuevo enlace.');setSessionReady(true)});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>{if(active)setAuthenticated(!!s)});return()=>{active=false;subscription.unsubscribe()}},[])
  const summary=useQuery({queryKey:['summary'],queryFn:getSummary,enabled:authenticated}); const board=useQuery({queryKey:['board'],queryFn:getBoard,enabled:authenticated}); const agents=useQuery({queryKey:['agents'],queryFn:getAgents,enabled:authenticated});
  useEffect(()=>{if(!selected&&board.data?.rows[0])setSelected(board.data.rows[0].work_item_id)},[board.data,selected])
  const history=useQuery({queryKey:['history',selected],queryFn:()=>getHistory(selected),enabled:authenticated&&!!selected});
  const lastUpdated=Math.max(summary.dataUpdatedAt,board.dataUpdatedAt,agents.dataUpdatedAt,history.dataUpdatedAt||0)
  const waiting=board.data?.rows.filter(r=>r.waiting_for_juancho)??[]; const blocked=board.data?.rows.filter(r=>r.blocked)??[]
  const refresh=()=>qc.invalidateQueries()
- if(!sessionReady)return <main className="loading-screen">Loading Factory Control…</main>; if(!authenticated)return <Login/>
+ if(!sessionReady)return <main className="loading-screen">Loading Factory Control…</main>; if(callbackError)return <AuthCallbackError message={callbackError} onReset={()=>{setCallbackError('');setPasswordSetup(false)}}/>; if(passwordSetup)return authenticated?<PasswordSetup onComplete={()=>setPasswordSetup(false)}/>:<AuthCallbackError message="La sesión de invitación no está disponible o ha caducado. Solicita un nuevo enlace." onReset={()=>setPasswordSetup(false)}/>; if(!authenticated)return <Login/>
  const openPipeline=(id:string)=>{setSelected(id);setPage('pipelines')}
  const content=()=>{
   if(summary.error||board.error||agents.error)return <ErrorBox error={summary.error||board.error||agents.error}/>

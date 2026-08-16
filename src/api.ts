@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { agentsResponse, boardResponse, historyResponse, pipelineResponse, summaryResponse } from './contracts'
+import { readAuthCallback } from './auth-callback'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 if (!url || !key) throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY')
 const supabaseUrl: string = url
 const publishableKey: string = key
+export const initialAuthCallback = typeof window === 'undefined' ? { kind: 'none' as const } : readAuthCallback(window.location)
 export const supabase=createClient(supabaseUrl,publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})
 
 async function read(path:string){
