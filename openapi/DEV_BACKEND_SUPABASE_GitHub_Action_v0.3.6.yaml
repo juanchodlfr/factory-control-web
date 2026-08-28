@@ -1,0 +1,483 @@
+openapi: 3.1.0
+info:
+  title: Agent Factory GitHub DEV API
+  version: '0.3.6'
+  description: GitHub Action for DEV_BACKEND_SUPABASE. Direct bounded GitHub access for development branches, atomic Git Data commits, and pull requests.
+servers:
+  - url: https://api.github.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    GenericResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        sha:
+          type: string
+        ref:
+          type: string
+        number:
+          type: integer
+        url:
+          type: string
+security:
+  - bearerAuth: []
+paths:
+  /repos/{owner}/{repo}:
+    get:
+      operationId: githubReadRepository
+      summary: Read repository metadata
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Repository metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/contents/{path}:
+    get:
+      operationId: githubReadRepositoryFile
+      summary: Read repository file
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ref
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Repository file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/commits:
+    get:
+      operationId: githubListCommits
+      summary: List repository commits
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sha
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Commit list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/branches:
+    get:
+      operationId: githubListBranches
+      summary: List repository branches
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Branch list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/pulls:
+    get:
+      operationId: githubListPullRequests
+      summary: List pull requests
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - open
+              - closed
+              - all
+      responses:
+        '200':
+          description: Pull request list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+    post:
+      operationId: githubCreatePullRequest
+      summary: Create pull request
+      description: Creates a pull request but does not merge it.
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                head:
+                  type: string
+                base:
+                  type: string
+                body:
+                  type: string
+                draft:
+                  type: boolean
+              required:
+                - title
+                - head
+                - base
+      responses:
+        '201':
+          description: Pull request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/git/ref/heads/{branch}:
+    get:
+      operationId: githubReadBranchRef
+      summary: Read exact branch HEAD
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: branch
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Git branch reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/git/refs:
+    post:
+      operationId: githubCreateBranch
+      summary: Create development branch
+      description: Creates refs/heads/<branch> from an exact existing commit SHA.
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ref:
+                  type: string
+                sha:
+                  type: string
+              required:
+                - ref
+                - sha
+      responses:
+        '201':
+          description: Branch created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/git/commits/{commit_sha}:
+    get:
+      operationId: githubGetGitCommit
+      summary: Read Git commit and tree SHA
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: commit_sha
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Git commit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/git/blobs:
+    post:
+      operationId: githubCreateBlob
+      summary: Create Git blob
+      description: Creates one blob for an atomic commit.
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                encoding:
+                  type: string
+                  enum:
+                    - utf-8
+                    - base64
+              required:
+                - content
+                - encoding
+      responses:
+        '201':
+          description: Blob created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/git/trees:
+    post:
+      operationId: githubCreateTree
+      summary: Create atomic multi-file tree
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                base_tree:
+                  type: string
+                tree:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                      mode:
+                        type: string
+                      type:
+                        type: string
+                      sha:
+                        type: string
+                    required:
+                      - path
+                      - mode
+                      - type
+                      - sha
+              required:
+                - base_tree
+                - tree
+      responses:
+        '201':
+          description: Tree created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/git/commits:
+    post:
+      operationId: githubCreateCommit
+      summary: Create atomic Git commit
+      description: Creates one commit with exactly one verified parent.
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                tree:
+                  type: string
+                parents:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - message
+                - tree
+                - parents
+      responses:
+        '201':
+          description: Commit created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /repos/{owner}/{repo}/git/refs/heads/{branch}:
+    patch:
+      operationId: githubUpdateRef
+      summary: Fast-forward development branch
+      description: Moves an existing development branch to a new commit. The force parameter is not exposed, so GitHub uses force=false by default.
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: branch
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sha:
+                  type: string
+              required:
+                - sha
+      responses:
+        '200':
+          description: Branch updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
