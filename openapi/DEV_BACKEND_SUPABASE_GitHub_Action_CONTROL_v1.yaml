@@ -1,0 +1,44 @@
+openapi: 3.1.0
+info:
+  title: Agent Factory GitHub DEV API Control
+  version: '1.0.0'
+  description: Minimal control schema for GPT Actions URL import validation.
+servers:
+  - url: https://api.github.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    GenericResponse:
+      type: object
+      properties:
+        message:
+          type: string
+security:
+  - bearerAuth: []
+paths:
+  /repos/{owner}/{repo}:
+    get:
+      operationId: githubReadRepositoryControl
+      summary: Read repository metadata
+      x-openai-isConsequential: false
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Repository metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
