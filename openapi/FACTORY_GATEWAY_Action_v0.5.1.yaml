@@ -1,0 +1,595 @@
+openapi: 3.1.0
+info:
+  title: Agent Factory Control Gateway API
+  version: 0.5.1
+  description: Bounded Agent Factory control-plane Action. Caller identity is derived server-side from the X-Factory-Control-Key credential. Client actor/agent authority fields are not accepted.
+servers:
+- url: https://hgrinvdxkbqggwgbzpge.supabase.co/functions/v1/factory-control-gateway
+components:
+  securitySchemes:
+    factoryControlKey:
+      type: apiKey
+      in: header
+      name: X-Factory-Control-Key
+  schemas:
+    JsonObject:
+      type: object
+      additionalProperties: true
+    GenericResponse:
+      type: object
+      additionalProperties: true
+security:
+- factoryControlKey: []
+paths:
+  /factory_inbox_list:
+    post:
+      operationId: factoryInboxList
+      summary: List visible Factory handoffs for the authenticated durable agent
+      x-openai-isConsequential: false
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_handoff_read:
+    post:
+      operationId: factoryHandoffRead
+      summary: Read one assigned Factory handoff
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+              required:
+              - handoff_id
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_handoff_accept:
+    post:
+      operationId: factoryHandoffAccept
+      summary: Accept one assigned Factory handoff
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - handoff_id
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_handoff_complete_terminal:
+    post:
+      operationId: factoryHandoffCompleteTerminal
+      summary: Complete a handoff without closing the Work Item
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                result:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - handoff_id
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_handoff_complete_and_continue:
+    post:
+      operationId: factoryHandoffCompleteAndContinue
+      summary: Complete a handoff and continue the same Work Item to another agent
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                result:
+                  $ref: '#/components/schemas/JsonObject'
+                to_agent_code:
+                  type: string
+                  pattern: ^[A-Z][A-Z0-9_]{1,63}$
+                instructions:
+                  type: string
+                  minLength: 1
+                  maxLength: 10000
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - handoff_id
+              - to_agent_code
+              - instructions
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_handoff_reject_terminal:
+    post:
+      operationId: factoryHandoffRejectTerminal
+      summary: Reject a handoff without closing the Work Item
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                result:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - handoff_id
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_handoff_reject_and_continue:
+    post:
+      operationId: factoryHandoffRejectAndContinue
+      summary: Reject a handoff and continue the same Work Item to another agent
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                result:
+                  $ref: '#/components/schemas/JsonObject'
+                to_agent_code:
+                  type: string
+                  pattern: ^[A-Z][A-Z0-9_]{1,63}$
+                instructions:
+                  type: string
+                  minLength: 1
+                  maxLength: 10000
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - handoff_id
+              - to_agent_code
+              - instructions
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_work_create_and_handoff:
+    post:
+      operationId: factoryWorkCreateAndHandoff
+      summary: Create a Work Item and initial handoff atomically
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+                work_key:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                objective:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+                acceptance_criteria:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 500
+                instructions:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+                to_agent_code:
+                  type: string
+                  pattern: ^[A-Z][A-Z0-9_]{1,63}$
+                product:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                payload:
+                  $ref: '#/components/schemas/JsonObject'
+                required_gates:
+                  type: array
+                  maxItems: 12
+                  items:
+                    type: string
+                    pattern: ^[A-Z][A-Z0-9_]{1,63}$
+              required:
+              - idempotency_key
+              - work_key
+              - title
+              - objective
+              - acceptance_criteria
+              - instructions
+              - to_agent_code
+              - product
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_work_read:
+    post:
+      operationId: factoryWorkRead
+      summary: Read one Factory Work Item
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                work_item_id:
+                  type: string
+                  format: uuid
+              required:
+              - work_item_id
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_work_gate_set:
+    post:
+      operationId: factoryWorkGateSet
+      summary: Set a Work Item gate result
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                work_item_id:
+                  type: string
+                  format: uuid
+                gate_code:
+                  type: string
+                  pattern: ^[A-Z][A-Z0-9_]{1,63}$
+                status:
+                  type: string
+                  enum:
+                  - PENDING
+                  - PASS
+                  - FAIL
+                  - WAIVED
+                required:
+                  type: boolean
+                evidence:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - work_item_id
+              - gate_code
+              - status
+              - required
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_work_close:
+    post:
+      operationId: factoryWorkClose
+      summary: Close a Work Item after required gates are satisfied
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                work_item_id:
+                  type: string
+                  format: uuid
+                result:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - work_item_id
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_escalation_create:
+    post:
+      operationId: factoryEscalationCreate
+      summary: Create a Factory escalation request from an active handoff
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                result:
+                  $ref: '#/components/schemas/JsonObject'
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+                payload:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - handoff_id
+              - reason
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_human_action_request:
+    post:
+      operationId: factoryHumanActionRequest
+      summary: Create a human-action request from an active handoff
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                handoff_id:
+                  type: string
+                  format: uuid
+                result:
+                  $ref: '#/components/schemas/JsonObject'
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+                payload:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - handoff_id
+              - reason
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_workflow_request_resolve:
+    post:
+      operationId: factoryWorkflowRequestResolve
+      summary: Resolve an open workflow request when authorized
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                workflow_request_id:
+                  type: string
+                  format: uuid
+                resolution:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - workflow_request_id
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_release_candidate_register:
+    post:
+      operationId: factoryReleaseCandidateRegister
+      summary: Register a release candidate for a Work Item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                work_item_id:
+                  type: string
+                  format: uuid
+                candidate_sha:
+                  type: string
+                  pattern: ^[0-9a-f]{40}$
+                pr_number:
+                  type: integer
+                  minimum: 1
+                scope:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - work_item_id
+              - candidate_sha
+              - pr_number
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+  /factory_release_authorize:
+    post:
+      operationId: factoryReleaseAuthorize
+      summary: Authorize a registered release candidate when reserved authority permits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                work_item_id:
+                  type: string
+                  format: uuid
+                candidate_sha:
+                  type: string
+                  pattern: ^[0-9a-f]{40}$
+                scope:
+                  $ref: '#/components/schemas/JsonObject'
+                idempotency_key:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+              required:
+              - work_item_id
+              - candidate_sha
+              - scope
+              - idempotency_key
+      responses:
+        '200':
+          description: Successful gateway response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
