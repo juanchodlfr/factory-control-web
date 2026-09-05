@@ -1,0 +1,94 @@
+openapi: 3.1.0
+info:
+  title: PO_PHARMAOS GitHub Durable State API
+  version: "1.0.0"
+  description: >
+    Bounded GitHub Action for PO_PHARMAOS durable product/state maintenance.
+    Intended only for juanchodlfr/agent-factory and routine writes under
+    agents/PO_PHARMAOS/**. No branches, PRs, merges, tags, releases, deletes,
+    administration, secrets or environments are exposed.
+servers:
+  - url: https://api.github.com/repos/juanchodlfr/agent-factory
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    GitHubContentResponse:
+      type: object
+      additionalProperties: true
+    GitHubDirectoryResponse:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    PutContentRequest:
+      type: object
+      properties:
+        message:
+          type: string
+        content:
+          type: string
+          description: Base64-encoded UTF-8 file content.
+        sha:
+          type: string
+          description: Current blob SHA. Omit only when creating a new file.
+      required:
+        - message
+        - content
+security:
+  - bearerAuth: []
+paths:
+  /contents/{path}:
+    get:
+      operationId: pharmaosGitHubReadContent
+      summary: Read a file or directory from canonical agent-factory main
+      x-openai-isConsequential: false
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File metadata/content or directory listing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/GitHubContentResponse"
+                  - $ref: "#/components/schemas/GitHubDirectoryResponse"
+    put:
+      operationId: pharmaosGitHubCreateOrUpdateContent
+      summary: Create or update one durable PO_PHARMAOS file on canonical main
+      description: >
+        Operationally restricted by governance to agents/PO_PHARMAOS/** only.
+        Use sha when updating an existing file. Default branch only.
+      x-openai-isConsequential: false
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutContentRequest"
+      responses:
+        "200":
+          description: Existing file updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GitHubContentResponse"
+        "201":
+          description: New file created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GitHubContentResponse"
