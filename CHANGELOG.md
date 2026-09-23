@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-candidate.5
+- Added the `/oauth/consent` Worker route required by the Supabase OAuth 2.1 Server used by the private FA_DB MCP pilot.
+- The route preserves the OAuth query string (including `authorization_id`) and redirects only that path to the deployed `factory-mcp-oauth/authorize` consent surface.
+- Added explicit Cloudflare Workers static-assets configuration for the existing React/Vite SPA, including SPA fallback and selective Worker-first routing for `/oauth/consent`.
+- No Factory mutation capability, Supabase secret, merge, tag, release, or production deployment is included in this candidate.
+
 ## 0.1.0-candidate.4
 - Added visible Supabase Auth invitation/password-setup handling for authenticated invite callbacks using `auth.updateUser({ password })`.
 - Added explicit invite/callback error states so consumed, invalid, or expired links never render a blank page.
