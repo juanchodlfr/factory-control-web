@@ -1,12 +1,13 @@
 {
   "name": "factory-control-web",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0-deploy",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "test": "vitest run",
+    "check": "node --check server.mjs && node --check src/app.mjs && node --check src/api.mjs && node --check src/model.mjs && node --check worker/index.js",
+    "build": "node scripts/build-v020.mjs",
+    "test": "node --test deploy-tests/*.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
