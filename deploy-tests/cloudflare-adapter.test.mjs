@@ -30,3 +30,10 @@ test("Wrangler configuration is present for both supported Cloudflare build root
   assert.equal(nested.assets.directory, "../dist");
   assert.equal(nested.assets.run_worker_first, true);
 });
+
+
+test("Wrangler deploy redirect resolves canonical root config from nested build cwd", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const redirect = JSON.parse(await readFile(new URL("../.wrangler/deploy/config.json", import.meta.url), "utf8"));
+  assert.equal(redirect.configPath, "../../wrangler.jsonc");
+});
