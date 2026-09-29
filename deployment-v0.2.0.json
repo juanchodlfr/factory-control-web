@@ -1,0 +1,27 @@
+{
+  "schema": "factory-control-cloudflare-deployment-v1",
+  "product_candidate_repository": "juanchodlfr/agent-factory",
+  "product_candidate_sha": "c6c1ff98fad9749e2313e2d553aeb1154686bc66",
+  "product_source_path": "factory-control-web/",
+  "deployment_repository": "juanchodlfr/factory-control-web",
+  "deployment_branch": "deploy/factory-control-v0.2.0-c6c1ff98",
+  "provider": "Cloudflare Workers",
+  "worker_name": "factory-control-web",
+  "production_origin": "https://factory-control-web.juancho-dlfr.workers.dev",
+  "new_hosting_provider_required": false,
+  "product_candidate_changed": false,
+  "preserved_routes": [
+    "/oauth/consent"
+  ],
+  "required_server_secrets": [
+    "FACTORY_CONTROL_ADMIN_TOKEN_SHA256",
+    "FACTORY_CONTROL_SESSION_SECRET",
+    "FACTORY_CONTROL_KEY"
+  ],
+  "required_server_vars": [
+    "FACTORY_CONTROL_PUBLIC_ORIGIN",
+    "FACTORY_CONTROL_GATEWAY_URL",
+    "FACTORY_CONTROL_ICON_PUBLIC_BASE_URL"
+  ],
+  "gateway_url": "https://hgrinvdxkbqggwgbzpge.supabase.co/functions/v1/factory-control-gateway"
+}
