@@ -36,3 +36,6 @@ Secrets:
 - `FACTORY_CONTROL_KEY`
 
 QA/Security must validate this deployment adapter before production replacement.
+
+
+<!-- cloudflare-build-config-recheck: 2026-09-29 -->
