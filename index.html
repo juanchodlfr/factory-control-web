@@ -1,1 +1,80 @@
-<!doctype html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#f5f7fb"/><title>Factory Control</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="factory-control-api-base" content="/api/factory-control">
+  <meta name="factory-control-icon-base" content="/agent-icons">
+  <title>Factory Control</title>
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div><p class="eyebrow">AGENT FACTORY</p><h1>Factory Control</h1></div>
+    <div class="header-actions">
+      <span id="sync-label" class="sync-label" aria-live="polite">Loading…</span>
+      <button id="global-refresh" class="button button-secondary" type="button">Refresh</button>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="Factory Control views">
+    <button class="tab is-active" data-view="board" type="button">Board</button>
+    <button class="tab" data-view="overview" type="button">Overview</button>
+    <button class="tab" data-view="agents" type="button">Agents</button>
+  </nav>
+  <main>
+    <section id="global-error" class="notice notice-error" hidden role="alert"></section>
+    <section id="board-view" class="view">
+      <div class="view-heading">
+        <div><p class="eyebrow">FEATURE / WORK ITEM</p><h2>Operational Board</h2></div>
+        <label class="filter-label"><span>State</span><select id="board-state-filter"><option value="">All states</option></select></label>
+      </div>
+      <div id="board-loading" class="skeleton-stack" aria-live="polite">Loading board…</div>
+      <div id="board-empty" class="empty" hidden>No features returned by the v0.2 projection.</div>
+      <div id="board-grid" class="board-grid" hidden></div>
+    </section>
+    <section id="overview-view" class="view" hidden>
+      <div class="view-heading">
+        <div><p class="eyebrow">SNAPSHOT / WINDOW</p><h2>Overview</h2></div>
+        <div class="window-controls">
+          <label>Window
+            <select id="overview-window">
+              <option value="6">6h</option><option value="24" selected>24h</option>
+              <option value="72">72h</option><option value="168">7d</option>
+            </select>
+          </label>
+          <button id="overview-refresh" class="button button-secondary" type="button">Refresh metrics</button>
+        </div>
+      </div>
+      <div id="overview-meta" class="meta-line"></div>
+      <div id="overview-loading" class="skeleton-stack" hidden>Loading overview…</div>
+      <div id="overview-content"></div>
+    </section>
+    <section id="agents-view" class="view" hidden>
+      <div class="view-heading"><div><p class="eyebrow">PRESENTATION METADATA ONLY</p><h2>Agents</h2></div></div>
+      <p class="boundary-copy">Durable identity, agent code, status and execution-surface status are read-only. Only display name and icon presentation can be changed.</p>
+      <div id="agents-grid" class="agents-grid"></div>
+    </section>
+  </main>
+  <aside id="drawer" class="drawer" hidden aria-labelledby="drawer-title" aria-live="polite">
+    <div class="drawer-backdrop" data-drawer-close></div>
+    <div class="drawer-panel">
+      <header class="drawer-header">
+        <div>
+          <p id="drawer-code" class="eyebrow">WORK ITEM</p>
+          <h2 id="drawer-title">Work Item</h2>
+          <div id="drawer-state" class="state-chip"></div>
+        </div>
+        <div class="drawer-actions">
+          <button id="drawer-refresh" class="button button-secondary" type="button">Refresh</button>
+          <button id="drawer-close" class="icon-button" type="button" aria-label="Close Work Item details">×</button>
+        </div>
+      </header>
+      <div id="drawer-loading" class="drawer-status" hidden>Refreshing Work Item…</div>
+      <div id="drawer-error" class="notice notice-error" hidden role="alert"></div>
+      <div id="drawer-content"></div>
+    </div>
+  </aside>
+  <script type="module" src="./src/app.mjs"></script>
+</body>
+</html>

@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "test": "vitest run",
-    "preview": "vite preview"
+    "check": "node --check server.mjs && node --check src/app.mjs && node --check src/api.mjs && node --check src/model.mjs && node --check worker/index.js",
+    "build": "node scripts/build-v020.mjs",
+    "test": "node --test deploy-tests/*.test.mjs",
+    "preview": "vite preview",
+    "deploy:cloudflare": "npx wrangler deploy --config ./wrangler.jsonc",
+    "preview:cloudflare": "npx wrangler preview --config ./wrangler.jsonc"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
