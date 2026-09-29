@@ -45,3 +45,5 @@ QA/Security must validate this deployment adapter before production replacement.
 <!-- cloudflare-build-and-version-recheck: 2026-09-29T20:20+02 -->
 
 <!-- cloudflare-version-build-recheck: 2026-09-29T20:35+02 -->
+
+<!-- cloudflare-version-command-final-recheck: 2026-09-29 -->
