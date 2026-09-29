@@ -1,0 +1,11 @@
+{
+  "name": "factory-control-web-worker-root",
+  "private": true,
+  "version": "0.2.0-deploy",
+  "type": "module",
+  "scripts": {
+    "build": "node ../scripts/build-v020.mjs",
+    "deploy": "npx wrangler deploy --config ./wrangler.jsonc",
+    "preview": "npx wrangler preview --config ./wrangler.jsonc"
+  }
+}
