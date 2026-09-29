@@ -17,3 +17,16 @@ test("asset fallback is restricted to exact candidate static paths", () => {
   assert.equal(shouldFallbackToAsset(req("/", "POST"), miss), false);
   assert.equal(shouldFallbackToAsset(req("/"), new Response("", { status: 401 })), false);
 });
+
+
+test("Wrangler configuration is present for both supported Cloudflare build roots", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const root = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
+  const nested = JSON.parse(await readFile(new URL("../worker/wrangler.jsonc", import.meta.url), "utf8"));
+  assert.equal(root.main, "./worker/index.js");
+  assert.equal(root.assets.directory, "./dist");
+  assert.equal(root.assets.run_worker_first, true);
+  assert.equal(nested.main, "./index.js");
+  assert.equal(nested.assets.directory, "../dist");
+  assert.equal(nested.assets.run_worker_first, true);
+});
