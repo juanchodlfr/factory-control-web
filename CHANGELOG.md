@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+- Default WorkBoard groups actual features by stable ID, with one column per agent and work item state cards at each intersection.
+- Preserve legacy work without feature assignments in explicit product groups; no Factory data migrations or inferred features.
+- Add account-saved short names and emoji/text icons, independent of canonical agent identities.
+- Add manual refresh feedback, optional 30-second auto refresh and independent live elapsed clocks.
+- Extend the existing admin-only read API with safe feature/link/executor/timestamp fields; retain authentication, origin checks and read-only methods.
+- Validate projection, terminal/blocker clock handling, editing and failure recovery with 16 tests and a 70-work-item cloud snapshot.
+
 ## 0.1.0-candidate.5
 - Added the `/oauth/consent` Worker route required by the Supabase OAuth 2.1 Server used by the private FA_DB MCP pilot.
 - The route preserves the OAuth query string (including `authorization_id`) and redirects only that path to the deployed `factory-mcp-oauth/authorize` consent surface.
