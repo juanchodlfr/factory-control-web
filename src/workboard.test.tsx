@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { boardResponse } from './contracts'
-import { groupFeatures, elapsedLabel } from './workboard-model'
+import { assignedWork, groupFeatures, elapsedLabel } from './workboard-model'
 import { parsePreferences } from './agent-presentation'
 import { WorkBoard } from './WorkBoard'
 import { buildBoard } from '../supabase/functions/factory/board'
@@ -95,4 +95,45 @@ it('handles invalid/future timestamps and validates account presentation metadat
   expect(elapsedLabel(start, Date.parse(start) - 5000)).toBe('0:00')
   expect(elapsedLabel(start, Date.parse(start) + 3661000)).toBe('1:01:01')
   expect(parsePreferences({ QA: { shortName: 'QA', icon: '🧪' }, bad: { shortName: '' } })).toEqual({ QA: { shortName: 'QA', icon: '🧪' } })
+})
+
+
+describe('current assignment only', () => {
+  it('renders once at the current executor despite historical senders and receivers', () => {
+    const data = fixture()
+    data.agents.push({ code: 'SECURITY', name: 'Security', status: 'ACTIVE' })
+    data.rows[0].executor_agent_code = 'SECURITY'
+    data.rows[0].cells.push({ agent_code: 'SECURITY', state: 'pending', latest_handoff_id: handoffId, origin: false, destination: true })
+    render(<WorkBoard data={data} preferences={{}} onSave={vi.fn()} onOpen={vi.fn()}/>)
+    const tile = screen.getByRole('button', { name: /W0001 · Cerrar arquitectura · Pendiente/ })
+    expect(screen.getAllByText('W1')).toHaveLength(1)
+    const cell = tile.closest('td')!
+    const index = Array.from(cell.parentElement!.children).indexOf(cell)
+    expect(screen.getAllByRole('columnheader')[index]).toHaveTextContent('SECURITY')
+    expect(tile).toHaveClass('tile-pending')
+    expect(tile.querySelector('.status')).toBeNull()
+  })
+  it('uses the assigned owner if no executor exists, never a historical destination', () => {
+    const data = fixture()
+    data.rows[0].executor_agent_code = null
+    data.rows[0].status = 'OPEN'
+    expect(assignedWork(data.rows[0])).toMatchObject({ agentCode: 'PO_APC', state: 'pending' })
+  })
+  it('prioritizes whole-work completion and blocking over historical cell completion', () => {
+    const row = fixture().rows[0]
+    row.blocked = true
+    expect(assignedWork(row)).toMatchObject({ state: 'blocked', startedAt: null })
+    row.status = 'DONE'
+    expect(assignedWork(row)).toMatchObject({ state: 'completed', startedAt: null })
+  })
+  it('keeps missing assignments visible once in Sin asignar', () => {
+    const data = fixture()
+    data.rows[0].executor_agent_code = 'UNKNOWN_AGENT'
+    render(<WorkBoard data={data} preferences={{}} onSave={vi.fn()} onOpen={vi.fn()}/>)
+    expect(screen.getAllByText('W1')).toHaveLength(1)
+    const tile = screen.getByRole('button', { name: /W0001 · Cerrar arquitectura/ })
+    const cell = tile.closest('td')!
+    const index = Array.from(cell.parentElement!.children).indexOf(cell)
+    expect(screen.getAllByRole('columnheader')[index]).toHaveTextContent('Sin asignar')
+  })
 })

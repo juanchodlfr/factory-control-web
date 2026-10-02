@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react'
 import type { BoardData } from './contracts'
 import { agentDisplay, displayAgent, type AgentPreferences } from './agent-presentation'
-import { groupFeatures } from './workboard-model'
+import { assignedWork, groupFeatures } from './workboard-model'
 import { LiveElapsed } from './LiveElapsed'
 
 const states = {
@@ -30,6 +30,10 @@ export function WorkBoard({ data, preferences, onSave, onOpen }: Props) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const groups = useMemo(() => groupFeatures(data), [data])
+  const columns = [...data.agents]
+  if (data.rows.some(row => !data.agents.some(a => a.code === assignedWork(row).agentCode))) {
+    columns.push({ code: '__UNASSIGNED__', name: 'Sin asignar', status: '' })
+  }
   const products = [...new Set(groups.map(g => g.product))].sort()
   const visible = groups.filter(g => !g.archived || !activeOnly).filter(g => !product || g.product === product).map(g => ({
     ...g,
@@ -54,7 +58,7 @@ export function WorkBoard({ data, preferences, onSave, onOpen }: Props) {
   const total = visible.reduce((n, g) => n + g.rows.length, 0)
   return <section className="panel workboard">
     <div className="section-head">
-      <div><span className="eyebrow">VISIÓN DE LA FACTORÍA</span><h2>WorkBoard</h2><p>Features por filas · agentes por columnas · work items en cada cruce.</p></div>
+      <div><span className="eyebrow">VISIÓN DE LA FACTORÍA</span><h2>WorkBoard</h2><p>Cada work item aparece solo en su agente asignado actualmente.</p></div>
       <button className="secondary-action" aria-pressed={editing} onClick={() => {
         if (editing) setEditing(false)
         else if (data.agents[0]) editAgent(data.agents[0].code)
@@ -86,25 +90,28 @@ export function WorkBoard({ data, preferences, onSave, onOpen }: Props) {
     <div className="workboard-scroll" tabIndex={0} role="region" aria-label="Matriz de features y agentes">
       <table className="feature-matrix">
         <caption className="sr-only">WorkBoard: features por filas y agentes por columnas</caption>
-        <thead><tr><th className="feature-column" scope="col">Feature / producto</th>{data.agents.map(a => {
-          const display = displayAgent(a.code, preferences)
+        <thead><tr><th className="feature-column" scope="col">Feature / producto</th>{columns.map(a => {
+          const display = a.code === '__UNASSIGNED__' ? { shortName: 'Sin asignar', icon: '—' } : displayAgent(a.code, preferences)
           return <th key={a.code} scope="col" title={a.code + ' · ' + a.name}>
             <span className="column-icon" aria-hidden="true">{display.icon || '🤖'}</span>
             <span className="column-name">{display.shortName}</span><small className="column-code">{a.code}</small>
             <small>{a.status}</small>
-            {editing && <button className="column-edit" onClick={() => editAgent(a.code)} disabled={busy} aria-label={'Editar ' + a.code}>✎</button>}
+            {editing && a.code !== '__UNASSIGNED__' && <button className="column-edit" onClick={() => editAgent(a.code)} disabled={busy} aria-label={'Editar ' + a.code}>✎</button>}
           </th>
         })}</tr></thead>
         <tbody>{visible.map(group => <tr key={group.id}>
           <th scope="row" className="feature-column"><span className="product-label">{group.product}</span><strong>{group.title}</strong><small>{group.code}</small><span className="feature-count">{group.rows.length} work items{group.archived ? ' · Archivada' : ''}</span></th>
-          {data.agents.map(agent => {
-            const items = group.rows.map(row => ({ row, cell: row.cells.find(c => c.agent_code === agent.code) })).filter(x => x.cell && x.cell.state !== 'not_applicable')
-            return <td key={agent.code}>{items.length ? <div className="intersection">{items.map(({ row, cell }) => {
-              const [symbol, label] = states[cell!.state]
-              return <button className={'wi-tile tile-' + cell!.state} key={row.work_item_id} onClick={() => onOpen(row.work_item_id)} title={row.work_key + ' · ' + row.title}>
-                <b>{row.short_code || row.work_key}</b><span className="wi-title">{row.title}</span>
-                <span className={'status state-' + cell!.state}><span aria-hidden="true">{symbol}</span>{label}</span>
-                {cell!.state === 'working' && cell!.started_at && <LiveElapsed start={cell!.started_at}/>}
+          {columns.map(agent => {
+            const items = group.rows.map(row => ({ row, assignment: assignedWork(row) })).filter(({ assignment }) =>
+              (data.agents.some(a => a.code === assignment.agentCode) ? assignment.agentCode : '__UNASSIGNED__') === agent.code)
+            return <td key={agent.code}>{items.length ? <div className="intersection">{items.map(({ row, assignment }) => {
+              const [symbol, label] = states[assignment.state]
+              return <button className={'wi-tile tile-' + assignment.state} key={row.work_item_id} onClick={() => onOpen(row.work_item_id)}
+                aria-label={row.work_key + ' · ' + row.title + ' · ' + label}
+                title={row.work_key + ' · ' + row.title + ' · ' + label + ' · ' + (row.workflow_stage || row.status)}>
+                <span className="wi-heading"><b>{row.short_code || row.work_key}</b><span className="wi-title">{row.title}</span></span>
+                <span className="sr-only">{symbol} {label}</span>
+                {assignment.state === 'working' && assignment.startedAt && <LiveElapsed start={assignment.startedAt}/>}
                 <small>{row.workflow_stage || row.status}</small>
                 {row.waiting_for_juancho && <em>Espera a Juancho</em>}
               </button>
@@ -114,6 +121,6 @@ export function WorkBoard({ data, preferences, onSave, onOpen }: Props) {
       </table>
     </div>
     {!visible.length && <div className="empty">No hay work items que coincidan con estos filtros.</div>}
-    <div className="board-legend"><span>● En curso</span><span>→ Pendiente</span><span>! Bloqueado</span><span>✓ Completado</span><small>El contador avanza cada segundo desde la aceptación del handoff.</small></div>
+    <div className="board-legend"><span className="legend-working">Azul · En curso</span><span className="legend-pending">Amarillo · Pendiente</span><span className="legend-blocked">Rojo · Bloqueado</span><span className="legend-completed">Verde · Terminado</span><small>El contador avanza cada segundo desde la aceptación del handoff.</small></div>
   </section>
 }

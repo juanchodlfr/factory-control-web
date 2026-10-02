@@ -66,3 +66,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,.workboard-scroll:
  .agent-editor label:nth-of-type(3){width:80px;flex-basis:80px}
  .board-legend{gap:10px}.board-legend small{margin:0;width:100%}
 }
+
+/* State lives in the work-item heading, without a separate status row. */
+.wi-heading{display:grid;gap:4px;margin:-10px -10px 0;padding:9px 10px;border-radius:8px 8px 0 0}
+.wi-heading>b{font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.wi-heading .wi-title{color:inherit}
+.tile-working .wi-heading,.legend-working{background:#dbeafe;color:#174b91}
+.tile-pending .wi-heading,.legend-pending{background:#fef3c7;color:#704d00}
+.tile-blocked .wi-heading,.legend-blocked{background:#fee2e2;color:#942727}
+.tile-completed .wi-heading,.legend-completed{background:#dcfce7;color:#196236}
+.board-legend>span{padding:4px 7px;border-radius:5px}

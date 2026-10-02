@@ -34,3 +34,15 @@ export function elapsedLabel(start: string, now: number): string | null {
   const s = seconds % 60
   return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0')
 }
+
+// WorkBoard is current assignment, while pipeline/history retain participation.
+export function assignedWork(row: BoardData['rows'][number]) {
+  const agentCode = row.executor_agent_code || row.owner_agent_code || null
+  const cell = row.cells.find(c => c.agent_code === agentCode)
+  const terminal = ['DONE', 'CANCELLED', 'CANCELED', 'CLOSED'].includes(row.status)
+  const state = terminal ? 'completed' : row.blocked ? 'blocked'
+    : cell?.state === 'pending' ? 'pending'
+    : cell?.state === 'working' ? 'working'
+    : row.status === 'IN_PROGRESS' ? 'working' : 'pending'
+  return { agentCode, state, startedAt: state === 'working' ? cell?.started_at : null } as const
+}

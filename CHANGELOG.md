@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+- WorkBoard renders each Work Item once at its current executor, falling back to its assigned owner. Historical handoff participants remain in pipeline/history.
+- Keep unavailable assignments visible in an explicit Sin asignar column.
+- Color the Work Item heading green (finished), yellow (pending), red (blocked) or blue (working), and remove the separate visual status row while retaining accessible state labels.
+- Verified current-assignment rendering, historical-participant exclusion, blocked/terminal precedence and missing-agent visibility; 20 tests and production build pass.
+
 ## 0.2.0
 - Default WorkBoard groups actual features by stable ID, with one column per agent and work item state cards at each intersection.
 - Preserve legacy work without feature assignments in explicit product groups; no Factory data migrations or inferred features.
